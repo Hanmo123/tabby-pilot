@@ -38,14 +38,31 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
     }
 
     ngOnInit(): void {
+        // 优先使用传入的 sessionId
         if (this.sessionId) {
             const session = this.session.getSession(this.sessionId)
             if (session) {
                 this.currentSessionId = this.sessionId
-                this.messages = session.messages
+                // 深拷贝消息数组，并去重（基于消息 id）
+                const messageMap = new Map<string, ChatMessage>()
+                session.messages.forEach(msg => {
+                    if (!messageMap.has(msg.id)) {
+                        messageMap.set(msg.id, { 
+                            ...msg,
+                            parts: msg.parts ? [...msg.parts] : undefined 
+                        })
+                    }
+                })
+                this.messages = Array.from(messageMap.values())
+            } else {
+                // Session 不存在，创建新的
+                const newSession = this.session.createSession()
+                this.currentSessionId = newSession.id
+                this.sessionId = newSession.id
             }
         }
 
+        // 如果还没有 session，创建新的
         if (!this.currentSessionId) {
             const newSession = this.session.createSession()
             this.currentSessionId = newSession.id
