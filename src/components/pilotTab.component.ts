@@ -1,5 +1,6 @@
 import { Component, Input, HostBinding, OnInit, OnDestroy, Injector } from '@angular/core'
-import { BaseTabComponent } from 'tabby-core'
+import { BaseTabComponent, SplitTabComponent } from 'tabby-core'
+import { BaseTerminalTabComponent } from 'tabby-terminal'
 import { PilotAIService } from '../services/ai.service'
 import { SessionService } from '../services/session.service'
 import { ChatMessage, ToolExecution } from '../api/interfaces'
@@ -58,6 +59,23 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
         this.destroy$.complete()
     }
 
+    /**
+     * 获取分屏中的终端窗格
+     */
+    private getTerminalTab(): BaseTerminalTabComponent<any> | null {
+        // 如果当前 tab 在 SplitTab 中
+        if (this.parent instanceof SplitTabComponent) {
+            const allTabs = this.parent.getAllTabs()
+            // 查找第一个终端 tab（通常是左侧的）
+            const terminalTab = allTabs.find(tab => 
+                tab instanceof BaseTerminalTabComponent
+            ) as BaseTerminalTabComponent<any> | undefined
+            
+            return terminalTab || null
+        }
+        return null
+    }
+
     async sendMessage(): Promise<void> {
         if (!this.inputText.trim() || this.isLoading) {
             return
@@ -86,9 +104,12 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
                 content: msg.content,
             }))
 
+            // 获取终端引用
+            const terminalTab = this.getTerminalTab()
+
             const stream = this.ai.chat(aiMessages, async (toolCall) => {
                 return await this.handleToolCall(toolCall)
-            })
+            }, terminalTab)
 
             for await (const chunk of stream) {
                 if (chunk.type === 'text-delta') {

@@ -49,6 +49,7 @@
     "@ng-bootstrap/ng-bootstrap": "^14",
     "rxjs": "^7",
     "tabby-core": "*",
-    "tabby-settings": "*"
+    "tabby-settings": "*",
+    "tabby-terminal": "*"
   }
 }
