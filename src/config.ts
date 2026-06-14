@@ -3,9 +3,24 @@ import { ConfigProvider, Platform } from 'tabby-core'
 export class PilotConfigProvider extends ConfigProvider {
     defaults = {
         pilot: {
-            apiKey: '',
-            baseURL: '',
-            model: '',
+            provider: 'anthropic',
+            providers: {
+                anthropic: {
+                    apiKey: '',
+                    baseURL: '',
+                    model: '',
+                },
+                openaiResponses: {
+                    apiKey: '',
+                    baseURL: '',
+                    model: '',
+                },
+                openaiChat: {
+                    apiKey: '',
+                    baseURL: '',
+                    model: '',
+                },
+            },
             maxTokens: 4096,
             temperature: 0.7,
             sessions: [],

@@ -1,7 +1,18 @@
-export interface PilotConfig {
+export type PilotProviderType = 'anthropic' | 'openai-responses' | 'openai-chat'
+
+export interface ProviderConfig {
     apiKey: string
     baseURL?: string
     model: string
+}
+
+export interface PilotConfig {
+    provider: PilotProviderType
+    providers: {
+        anthropic: ProviderConfig
+        openaiResponses: ProviderConfig
+        openaiChat: ProviderConfig
+    }
     maxTokens: number
     temperature: number
     sessions: ChatSession[]
@@ -13,6 +24,7 @@ export interface ChatSession {
     createdAt: number
     updatedAt: number
     messages: ChatMessage[]
+    provider?: PilotProviderType
     workingDirectory?: string
 }
 

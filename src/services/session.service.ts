@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core'
 import { ConfigService } from 'tabby-core'
-import { ChatSession, ChatMessage } from '../api/interfaces'
+import { ChatSession, ChatMessage, PilotProviderType } from '../api/interfaces'
 
 @Injectable({ providedIn: 'root' })
 export class SessionService {
@@ -10,13 +10,14 @@ export class SessionService {
         private config: ConfigService,
     ) {}
 
-    createSession(workingDirectory?: string): ChatSession {
+    createSession(workingDirectory?: string, provider?: PilotProviderType): ChatSession {
         const session: ChatSession = {
             id: this.generateId(),
             title: 'New Chat',
             createdAt: Date.now(),
             updatedAt: Date.now(),
             messages: [],
+            provider: provider || this.config.store.pilot.provider || 'anthropic',
             workingDirectory,
         }
 

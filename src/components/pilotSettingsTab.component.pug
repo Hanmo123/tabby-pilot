@@ -5,17 +5,27 @@ h3
 .form-line
     .header
         .title API Configuration
-        .description Configure your Anthropic API settings
+        .description Configure the provider used for new chats
+
+.form-line
+    .header
+        .title Provider
+        .description Select the API provider for new chat sessions
+    select.form-control(
+        [(ngModel)]='config.store.pilot.provider',
+        (ngModelChange)='saveConfig()'
+    )
+        option(*ngFor='let provider of providerOptions', [value]='provider.value') {{provider.label}}
 
 .form-line
     .header
         .title API Key
-        .description Your Anthropic API key (required)
+        .description API key for the selected provider
     input.form-control(
         type='password',
-        [(ngModel)]='config.store.pilot.apiKey',
+        [(ngModel)]='selectedProviderConfig.apiKey',
         (ngModelChange)='saveConfig()',
-        placeholder='sk-ant-...'
+        [placeholder]='apiKeyPlaceholder'
     )
 
 .form-line
@@ -24,21 +34,21 @@ h3
         .description Optional custom API endpoint
     input.form-control(
         type='text',
-        [(ngModel)]='config.store.pilot.baseURL',
+        [(ngModel)]='selectedProviderConfig.baseURL',
         (ngModelChange)='saveConfig()',
-        placeholder='https://api.anthropic.com'
+        [placeholder]='baseURLPlaceholder'
     )
 
 .form-line
     .header
         .title Model
-        .description Select the Claude model to use
-    select.form-control(
-        [(ngModel)]='config.store.pilot.model',
-        (ngModelChange)='saveConfig()'
+        .description Enter the exact model ID to use
+    input.form-control(
+        type='text',
+        [(ngModel)]='selectedProviderConfig.model',
+        (ngModelChange)='saveConfig()',
+        [placeholder]='modelPlaceholder'
     )
-        option(value='', disabled, selected) Select a model
-        option(*ngFor='let model of modelOptions', [value]='model.value') {{model.label}}
 
 .form-line
     .header
@@ -69,4 +79,4 @@ h3
 .alert.alert-info.mt-3
     i.fas.fa-info-circle.me-2
     | Get your API key from 
-    a(href='https://console.anthropic.com/', target='_blank') console.anthropic.com
+    a([href]='providerHelpUrl', target='_blank') {{providerHelpLabel}}

@@ -3,7 +3,7 @@ import { BaseTabComponent, SplitTabComponent, RecoveryToken } from 'tabby-core'
 import { BaseTerminalTabComponent } from 'tabby-terminal'
 import { PilotAIService } from '../services/ai.service'
 import { SessionService } from '../services/session.service'
-import { ChatMessage, ToolExecution, ToolCall, MessagePart } from '../api/interfaces'
+import { ChatMessage, ToolExecution, ToolCall, MessagePart, PilotProviderType } from '../api/interfaces'
 import { Subject } from 'rxjs'
 
 @Component({
@@ -24,6 +24,7 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
     currentMessageParts: MessagePart[] = [] // 当前正在构建的消息片段
     pendingToolExecutions: ToolExecution[] = []
     error: string | null = null
+    currentProvider: PilotProviderType = 'anthropic'
 
     private destroy$ = new Subject<void>()
     private currentMessageId: string = ''
@@ -43,6 +44,7 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
             const session = this.session.getSession(this.sessionId)
             if (session) {
                 this.currentSessionId = this.sessionId
+                this.currentProvider = session.provider || 'anthropic'
                 // 深拷贝消息数组，并去重（基于消息 id）
                 const messageMap = new Map<string, ChatMessage>()
                 session.messages.forEach(msg => {
@@ -59,6 +61,7 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
                 const newSession = this.session.createSession()
                 this.currentSessionId = newSession.id
                 this.sessionId = newSession.id
+                this.currentProvider = newSession.provider || 'anthropic'
             }
         }
 
@@ -67,6 +70,7 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
             const newSession = this.session.createSession()
             this.currentSessionId = newSession.id
             this.sessionId = newSession.id
+            this.currentProvider = newSession.provider || 'anthropic'
         }
 
         this.setTitle('Pilot Chat')
@@ -145,7 +149,7 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
 
             const stream = this.ai.chat(aiMessages, async (toolCall) => {
                 return await this.handleToolCall(toolCall)
-            }, terminalTab)
+            }, terminalTab, this.currentProvider)
 
             let currentTextBuffer = '' // 累积当前文本片段
 
@@ -297,6 +301,7 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
         const newSession = this.session.createSession()
         this.currentSessionId = newSession.id
         this.sessionId = newSession.id
+        this.currentProvider = newSession.provider || 'anthropic'
         this.messages = []
         this.error = null
         this.recoveryStateChangedHint.next()
@@ -324,6 +329,16 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
 
     private generateId(): string {
         return `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    }
+
+    get providerLabel(): string {
+        if (this.currentProvider === 'openai-responses') {
+            return 'OpenAI Responses'
+        }
+        if (this.currentProvider === 'openai-chat') {
+            return 'OpenAI Chat'
+        }
+        return 'Anthropic'
     }
 
     /**

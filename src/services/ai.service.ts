@@ -5,6 +5,8 @@ import { z } from "zod";
 import { ConfigService } from "tabby-core";
 import { BaseTerminalTabComponent } from "tabby-terminal";
 import { execSync } from "child_process";
+import { PilotProviderType } from "../api/interfaces";
+import { createOpenAIChatModel, createOpenAIResponsesModel } from "./providers/openai-language-model";
 
 @Injectable({ providedIn: "root" })
 export class PilotAIService {
@@ -14,28 +16,25 @@ export class PilotAIService {
     messages: any[],
     onToolCall: (toolCall: any) => Promise<boolean>,
     terminalTab?: BaseTerminalTabComponent<any> | null,
+    providerType?: PilotProviderType,
   ) {
     const pilotConfig = this.config.store.pilot;
+    const selectedProvider = providerType || pilotConfig.provider || 'anthropic';
+    const providerConfig = this.getProviderConfig(selectedProvider);
 
-    if (!pilotConfig.apiKey) {
+    if (!providerConfig.apiKey) {
       throw new Error(
-        "API Key not configured. Please configure it in Settings > Pilot",
+        "API key not configured for the selected provider. Please configure it in Settings > Pilot",
       );
     }
 
-    if (!pilotConfig.model) {
+    if (!providerConfig.model) {
       throw new Error(
-        "Model not configured. Please select a model in Settings > Pilot",
+        "Model not configured for the selected provider. Please configure it in Settings > Pilot",
       );
     }
 
-    // Create anthropic provider with API key
-    const anthropic = createAnthropic({
-      apiKey: pilotConfig.apiKey,
-      baseURL: pilotConfig.baseURL || undefined,
-    });
-
-    const model = anthropic(pilotConfig.model);
+    const model = this.createModel(selectedProvider, providerConfig);
 
     const result = await streamText({
       model,
@@ -229,15 +228,45 @@ export class PilotAIService {
 
   validateConfig(): { valid: boolean; error?: string } {
     const pilotConfig = this.config.store.pilot;
+    const selectedProvider = pilotConfig.provider || 'anthropic';
+    const providerConfig = this.getProviderConfig(selectedProvider);
 
-    if (!pilotConfig.apiKey) {
+    if (!providerConfig.apiKey) {
       return { valid: false, error: "API Key is required" };
     }
 
-    if (!pilotConfig.model) {
+    if (!providerConfig.model) {
       return { valid: false, error: "Model selection is required" };
     }
 
     return { valid: true };
+  }
+
+  private createModel(provider: PilotProviderType, providerConfig: any) {
+    if (provider === 'openai-responses') {
+      return createOpenAIResponsesModel(providerConfig);
+    }
+    if (provider === 'openai-chat') {
+      return createOpenAIChatModel(providerConfig);
+    }
+
+    const anthropic = createAnthropic({
+      apiKey: providerConfig.apiKey,
+      baseURL: providerConfig.baseURL || undefined,
+    });
+    return anthropic(providerConfig.model);
+  }
+
+  private getProviderConfig(provider: PilotProviderType): any {
+    const pilotConfig = this.config.store.pilot;
+    const providers = pilotConfig.providers || {};
+
+    if (provider === 'openai-responses') {
+      return providers.openaiResponses || {};
+    }
+    if (provider === 'openai-chat') {
+      return providers.openaiChat || {};
+    }
+    return providers.anthropic || {};
   }
 }
