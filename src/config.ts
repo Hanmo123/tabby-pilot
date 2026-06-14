@@ -22,7 +22,6 @@ export class PilotConfigProvider extends ConfigProvider {
                 },
             },
             maxTokens: 4096,
-            temperature: 0.7,
             sessions: [],
         },
         hotkeys: {

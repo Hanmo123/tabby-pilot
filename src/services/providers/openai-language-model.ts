@@ -160,9 +160,6 @@ class OpenAIChatLanguageModel extends OpenAIBaseLanguageModel {
             stream_options: { include_usage: true },
         }
 
-        if (options.temperature !== undefined) {
-            body.temperature = options.temperature
-        }
         if (options.maxTokens !== undefined) {
             body.max_tokens = options.maxTokens
         }
@@ -336,9 +333,6 @@ class OpenAIResponsesLanguageModel extends OpenAIBaseLanguageModel {
 
         if (instructions) {
             body.instructions = instructions
-        }
-        if (options.temperature !== undefined) {
-            body.temperature = options.temperature
         }
         if (options.maxTokens !== undefined) {
             body.max_output_tokens = options.maxTokens

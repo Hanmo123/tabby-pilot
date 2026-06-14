@@ -14,7 +14,6 @@ export interface PilotConfig {
         openaiChat: ProviderConfig
     }
     maxTokens: number
-    temperature: number
     sessions: ChatSession[]
 }
 

@@ -40,7 +40,6 @@ export class PilotAIService {
       model,
       messages,
       maxSteps: 20,
-      temperature: pilotConfig.temperature || 0.7,
       maxTokens: pilotConfig.maxTokens || 4096,
       tools: {
         executeShell: tool({
