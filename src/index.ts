@@ -2,7 +2,7 @@ import { NgModule } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap'
-import TabbyCoreModule, { ConfigProvider, HotkeyProvider, HostAppService, AppService, HotkeysService, SplitTabComponent, TabsService } from 'tabby-core'
+import TabbyCoreModule, { ConfigProvider, HotkeyProvider, HostAppService, AppService, HotkeysService, SplitTabComponent, TabsService, TabRecoveryProvider, TabRecoveryService } from 'tabby-core'
 import { SettingsTabProvider } from 'tabby-settings'
 
 import { PilotTabComponent } from './components/pilotTab.component'
@@ -11,6 +11,7 @@ import { PilotSettingsTabComponent } from './components/pilotSettingsTab.compone
 import { PilotConfigProvider } from './config'
 import { PilotSettingsTabProvider } from './settings'
 import { PilotHotkeyProvider } from './hotkeys'
+import { PilotTabRecoveryProvider } from './recovery'
 
 import { PilotAIService } from './services/ai.service'
 import { SessionService } from './services/session.service'
@@ -26,6 +27,7 @@ import { SessionService } from './services/session.service'
         { provide: ConfigProvider, useClass: PilotConfigProvider, multi: true },
         { provide: SettingsTabProvider, useClass: PilotSettingsTabProvider, multi: true },
         { provide: HotkeyProvider, useClass: PilotHotkeyProvider, multi: true },
+        { provide: TabRecoveryProvider, useClass: PilotTabRecoveryProvider, multi: true },
         PilotAIService,
         SessionService,
     ],
@@ -39,6 +41,7 @@ export default class PilotModule {
         private app: AppService,
         private hotkeys: HotkeysService,
         private tabsService: TabsService,
+        private tabRecovery: TabRecoveryService,
         private sessionService: SessionService,
     ) {
         hotkeys.hotkey$.subscribe(hotkey => {
@@ -53,7 +56,9 @@ export default class PilotModule {
         if (this.app.tabs.length === 0) {
             this.app.openNewTab({
                 type: PilotTabComponent,
-                inputs: {},
+                inputs: {
+                    sessionId: this.getCurrentOrCreateSessionId(),
+                },
             })
             return
         }
@@ -63,7 +68,9 @@ export default class PilotModule {
         if (!activeTab) {
             this.app.openNewTab({
                 type: PilotTabComponent,
-                inputs: {},
+                inputs: {
+                    sessionId: this.getCurrentOrCreateSessionId(),
+                },
             })
             return
         }
@@ -86,7 +93,7 @@ export default class PilotModule {
             }
         } else {
             // 场景3：将普通标签转换为 SplitTab
-            const index = this.app.tabs.indexOf(activeTab)
+            const index = Math.max(this.app.tabs.indexOf(activeTab), 0)
             
             // 创建新的 SplitTabComponent
             splitTab = this.tabsService.create({ 
@@ -94,29 +101,31 @@ export default class PilotModule {
                 inputs: {} 
             })
             
-            // 等待 SplitTab 初始化完成
+            this.app.removeTab(activeTab)
+            this.app.addTabRaw(splitTab, index)
+
+            // 等待 SplitTab 初始化完成，再将原标签添加到左侧
             await splitTab.initialized$.toPromise()
-            
-            // 将原标签添加到左侧
             await splitTab.addTab(activeTab, null, 'l')
-            
-            // 替换原标签
-            this.app.tabs[index] = splitTab
-            this.app.selectTab(splitTab)
         }
 
         // 创建新的 PilotTab（延续上一个会话）
-        const currentSession = this.sessionService.getCurrentSession()
         const pilotTab = this.tabsService.create({
             type: PilotTabComponent,
             inputs: {
-                sessionId: currentSession?.id // 传入当前会话 ID 以延续会话
+                sessionId: this.getCurrentOrCreateSessionId(), // 传入当前会话 ID 以延续会话
             },
         })
         
         // 添加到右侧
         const focusedTab = splitTab.getFocusedTab()
         await splitTab.addTab(pilotTab, focusedTab, 'r')
+        this.app.emitTabsChanged()
+        await this.tabRecovery.saveTabs(this.app.tabs)
+    }
+
+    private getCurrentOrCreateSessionId(): string {
+        return (this.sessionService.getCurrentSession() ?? this.sessionService.createSession()).id
     }
 }
 

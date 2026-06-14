@@ -1,5 +1,5 @@
 import { Component, Input, HostBinding, OnInit, OnDestroy, Injector } from '@angular/core'
-import { BaseTabComponent, SplitTabComponent } from 'tabby-core'
+import { BaseTabComponent, SplitTabComponent, RecoveryToken } from 'tabby-core'
 import { BaseTerminalTabComponent } from 'tabby-terminal'
 import { PilotAIService } from '../services/ai.service'
 import { SessionService } from '../services/session.service'
@@ -255,6 +255,7 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
         this.sessionId = newSession.id
         this.messages = []
         this.error = null
+        this.recoveryStateChangedHint.next()
     }
 
     clearChat(): void {
@@ -265,5 +266,15 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
 
     private generateId(): string {
         return `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    }
+
+    /**
+     * 实现 Tab Recovery: 序列化标签状态以便 Tabby 重启后恢复
+     */
+    async getRecoveryToken(): Promise<RecoveryToken> {
+        return {
+            type: 'app:pilot-chat',
+            sessionId: this.currentSessionId || this.sessionId,
+        }
     }
 }
