@@ -54,10 +54,11 @@ export default class PilotModule {
     private async openChatTab(): Promise<void> {
         // 场景1：没有打开的标签页，直接创建新标签
         if (this.app.tabs.length === 0) {
+            const newSession = this.sessionService.createSession()
             this.app.openNewTab({
                 type: PilotTabComponent,
                 inputs: {
-                    sessionId: this.getCurrentOrCreateSessionId(),
+                    sessionId: newSession.id,
                 },
             })
             return
@@ -66,10 +67,11 @@ export default class PilotModule {
         // 获取当前激活的标签页
         const activeTab = this.app.activeTab
         if (!activeTab) {
+            const newSession = this.sessionService.createSession()
             this.app.openNewTab({
                 type: PilotTabComponent,
                 inputs: {
-                    sessionId: this.getCurrentOrCreateSessionId(),
+                    sessionId: newSession.id,
                 },
             })
             return
@@ -116,11 +118,12 @@ export default class PilotModule {
             await splitTab.addTab(activeTab, null, 'l')
         }
 
-        // 创建新的 PilotTab（延续上一个会话）
+        // 创建新的 PilotTab（每次创建新会话）
+        const newSession = this.sessionService.createSession()
         const pilotTab = this.tabsService.create({
             type: PilotTabComponent,
             inputs: {
-                sessionId: this.getCurrentOrCreateSessionId(), // 传入当前会话 ID 以延续会话
+                sessionId: newSession.id,
             },
         }) as PilotTabComponent
         
@@ -132,10 +135,6 @@ export default class PilotModule {
         
         // 聚焦输入框
         pilotTab.focusInput()
-    }
-
-    private getCurrentOrCreateSessionId(): string {
-        return (this.sessionService.getCurrentSession() ?? this.sessionService.createSession()).id
     }
 }
 

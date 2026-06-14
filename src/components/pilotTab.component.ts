@@ -52,7 +52,6 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
             this.sessionId = newSession.id
         }
 
-        this.session.setCurrentSession(this.currentSessionId)
         this.setTitle('Pilot Chat')
     }
 
