@@ -76,9 +76,9 @@
     .pilot-input
         textarea.form-control(
             [(ngModel)]='inputText',
-            (keydown.enter)='$event.ctrlKey && sendMessage()',
+            (keydown.enter)='handleEnterKey($event)',
             [disabled]='isLoading',
-            placeholder='Type your message... (Ctrl+Enter to send)',
+            placeholder='Type your message... (Enter to send, Shift+Enter for new line)',
             rows='3'
         )
         .pilot-input-actions

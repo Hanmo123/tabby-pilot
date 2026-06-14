@@ -77,6 +77,17 @@ export class PilotTabComponent extends BaseTabComponent implements OnInit, OnDes
         return null
     }
 
+    handleEnterKey(event: KeyboardEvent): void {
+        // Shift+Enter: 允许换行，不做处理
+        if (event.shiftKey) {
+            return
+        }
+        
+        // Enter: 发送消息
+        event.preventDefault()
+        this.sendMessage()
+    }
+
     async sendMessage(): Promise<void> {
         if (!this.inputText.trim() || this.isLoading) {
             return
